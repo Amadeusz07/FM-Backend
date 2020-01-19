@@ -3,17 +3,40 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"time"
 
+	"./controllers"
+
+	"github.com/Amadeusz07/FM-Backend/DAL"
+	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 const mongoURL = "mongodb://localhost:27017"
 const env = "local"
+const port = ":8080"
 
 func main() {
+	db := initDbConnection()
+	controllers.NewExpensesController(db)
+	initHTTPServer()
+}
 
+func initHTTPServer() {
+	fmt.Println("Starting HTTP Server")
+	r := mux.NewRouter()
+	r.HandleFunc("/expenses/{id}", controllers.GetExpense).Methods(http.MethodGet)
+	r.Use(mux.CORSMethodMiddleware(r))
+
+	fmt.Printf("Listen and Serve HTTP server on port %s\n", port)
+	http.ListenAndServe(port, r)
+
+}
+
+func initDbConnection() DAL.Database {
+	fmt.Println("Starting connection to MongoDB")
 	client, err := mongo.NewClient(options.Client().ApplyURI(mongoURL))
 	if err != nil {
 		panic("Error on creating MongoDB Client")
@@ -26,39 +49,5 @@ func main() {
 	}
 	fmt.Printf("Connected to MongoDB server %s \n", mongoURL)
 
-	// database := DAL.NewDatabase(env, client)
-
-	// expenseData := DAL.NewExpenseData(database.GetCollection("expenses"))
-
-	// databaseExpense := DAL.NewExpenseData("local", client)
-	// id, _ := primitive.ObjectIDFromHex("5e24ab04c9d19abe12b04c0a")
-	// result := databaseExpense.GetDataByID(id)
-
-	// // for i := 0; i < 10; i++ {
-	// // 	UserID, _ := primitive.ObjectIDFromHex("1")
-	// // 	AccountID, _ := primitive.ObjectIDFromHex("2")
-	// // 	CategoryID, _ := primitive.ObjectIDFromHex("3")
-	// // 	expense := &models.Expense{
-	// // 		Amount:     float32(i + 2),
-	// // 		AddedDate:  time.Now(),
-	// // 		UserID:     UserID,
-	// // 		AccountID:  AccountID,
-	// // 		CategoryID: CategoryID,
-	// // 	}
-	// // 	databaseExpense.AddExpense(expense)
-	// // }
-
-	// // UserID, _ := primitive.ObjectIDFromHex("1")
-	// // AccountID, _ := primitive.ObjectIDFromHex("2")
-	// // CategoryID, _ := primitive.ObjectIDFromHex("3")
-	// expense := &models.Expense{
-	// 	Amount:     float32(66),
-	// 	AddedDate:  time.Now(),
-	// 	UserID:     primitive.NewObjectID(),
-	// 	AccountID:  primitive.NewObjectID(),
-	// 	CategoryID: primitive.NewObjectID(),
-	// }
-	// databaseExpense.AddExpense(expense)
-
-	// fmt.Printf("Found result %f %d", result.Amount, result.AddedDate.Year())
+	return DAL.NewDatabase("local", client)
 }
