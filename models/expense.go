@@ -14,5 +14,4 @@ type Expense struct {
 	CategoryID primitive.ObjectID `json:"categoryId,omitempty" bson:"_categoryId,omitempty"`
 	Amount     float32            `json:"amount,omitempty" bson:"amount,omitempty"`
 	AddedDate  time.Time          `json:"addedDate,omitempty" bson:"addedDate,omitempty"`
-	Category   Category           `json:"category,omitempty"`
 }

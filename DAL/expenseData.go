@@ -2,6 +2,7 @@ package DAL
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 
@@ -30,12 +31,13 @@ func (repo expenseRepo) GetDataByID(id primitive.ObjectID) models.Expense {
 	var result models.Expense
 	err := repo.collection.FindOne(ctx, filter).Decode(&result)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 	return result
 }
 
 func (repo expenseRepo) AddExpense(expense *models.Expense) primitive.ObjectID {
+	expense.AddedDate = time.Now()
 	ctx, cancFunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancFunc()
 	res, err := repo.collection.InsertOne(ctx, expense)

@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"time"
 
+	"./DAL"
 	"./controllers"
 
-	"github.com/Amadeusz07/FM-Backend/DAL"
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -20,7 +20,8 @@ const port = ":8080"
 
 func main() {
 	db := initDbConnection()
-	controllers.NewExpensesController(db)
+	controllers.NewExpensesController(db.NewExpenseData())
+	controllers.NewCategoriesController(db.NewCategoryData())
 	initHTTPServer()
 }
 
@@ -28,6 +29,11 @@ func initHTTPServer() {
 	fmt.Println("Starting HTTP Server")
 	r := mux.NewRouter()
 	r.HandleFunc("/expenses/{id}", controllers.GetExpense).Methods(http.MethodGet)
+	r.HandleFunc("/expenses", controllers.AddExpense).Methods(http.MethodPost)
+
+	r.HandleFunc("/categories/{id}", controllers.GetCategory).Methods(http.MethodGet)
+	r.HandleFunc("/categories", controllers.AddCategory).Methods(http.MethodPost)
+
 	r.Use(mux.CORSMethodMiddleware(r))
 
 	fmt.Printf("Listen and Serve HTTP server on port %s\n", port)
