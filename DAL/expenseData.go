@@ -3,7 +3,6 @@ package DAL
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"../models"
@@ -42,7 +41,7 @@ func (repo expenseRepo) AddExpense(expense *models.Expense) primitive.ObjectID {
 	defer cancFunc()
 	res, err := repo.collection.InsertOne(ctx, expense)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 	return res.InsertedID.(primitive.ObjectID)
 }

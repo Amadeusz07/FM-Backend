@@ -31,8 +31,11 @@ func initHTTPServer() {
 	r.HandleFunc("/expenses/{id}", controllers.GetExpense).Methods(http.MethodGet)
 	r.HandleFunc("/expenses", controllers.AddExpense).Methods(http.MethodPost)
 
-	r.HandleFunc("/categories/{id}", controllers.GetCategory).Methods(http.MethodGet)
+	r.HandleFunc("/categories", controllers.GetCategories).Methods(http.MethodGet)
 	r.HandleFunc("/categories", controllers.AddCategory).Methods(http.MethodPost)
+	r.HandleFunc("/categories/{id}", controllers.GetCategory).Methods(http.MethodGet)
+	r.HandleFunc("/categories/{id}", controllers.UpdateCategory).Methods(http.MethodPut)
+	r.HandleFunc("/categories/{id}", controllers.DeleteCategory).Methods(http.MethodDelete)
 
 	r.Use(mux.CORSMethodMiddleware(r))
 

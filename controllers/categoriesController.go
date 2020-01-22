@@ -18,7 +18,15 @@ func NewCategoriesController(category DAL.CategoryData) {
 	categoryData = category
 }
 
-// GetCategory /categories/{id}
+// GetCategories /categories
+func GetCategories(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	result := categoryData.GetCategories()
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(result)
+}
+
+// GetCategory /categories/:id
 func GetCategory(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	vars := mux.Vars(r)
@@ -48,4 +56,36 @@ func AddCategory(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(struct {
 		ID primitive.ObjectID
 	}{id})
+}
+
+// UpdateCategory /categories/:id
+func UpdateCategory(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	decoder := json.NewDecoder(r.Body)
+	var category models.Category
+	if err := decoder.Decode(&category); err != nil {
+		fmt.Println(err)
+		return
+	}
+	vars := mux.Vars(r)
+	id, err := primitive.ObjectIDFromHex(vars["id"])
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	categoryData.UpdateCategory(id, &category)
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// DeleteCategory /categories/:id
+func DeleteCategory(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	vars := mux.Vars(r)
+	id, err := primitive.ObjectIDFromHex(vars["id"])
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	categoryData.DeleteCategory(id)
+	w.WriteHeader(http.StatusAccepted)
 }
