@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"../DAL"
 	"../models"
@@ -17,6 +18,19 @@ var expenseData DAL.ExpenseData
 // NewExpensesController constructor
 func NewExpensesController(expense DAL.ExpenseData) {
 	expenseData = expense
+}
+
+// GetExpenses /expenses?count=int64
+func GetExpenses(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	count, err := strconv.ParseInt(r.URL.Query().Get("count"), 10, 16)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	result := expenseData.GetLastHistory(count)
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(result)
 }
 
 // GetExpense /expenses/{id}

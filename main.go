@@ -9,6 +9,7 @@ import (
 	"./DAL"
 	"./controllers"
 
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -17,6 +18,7 @@ import (
 const mongoURL = "mongodb://localhost:27017"
 const env = "local"
 const port = ":8080"
+const frontendAllowedCORS = "http://localhost:4200"
 
 func main() {
 	db := initDbConnection()
@@ -28,8 +30,9 @@ func main() {
 func initHTTPServer() {
 	fmt.Println("Starting HTTP Server")
 	r := mux.NewRouter()
-	r.HandleFunc("/expenses/{id}", controllers.GetExpense).Methods(http.MethodGet)
+	r.HandleFunc("/expenses", controllers.GetExpenses).Queries("count", "{count}").Methods(http.MethodGet)
 	r.HandleFunc("/expenses", controllers.AddExpense).Methods(http.MethodPost)
+	r.HandleFunc("/expenses/{id}", controllers.GetExpense).Methods(http.MethodGet)
 
 	r.HandleFunc("/categories", controllers.GetCategories).Methods(http.MethodGet)
 	r.HandleFunc("/categories", controllers.AddCategory).Methods(http.MethodPost)
@@ -37,11 +40,12 @@ func initHTTPServer() {
 	r.HandleFunc("/categories/{id}", controllers.UpdateCategory).Methods(http.MethodPut)
 	r.HandleFunc("/categories/{id}", controllers.DeleteCategory).Methods(http.MethodDelete)
 
-	r.Use(mux.CORSMethodMiddleware(r))
+	headersOk := handlers.AllowedHeaders([]string{"Origin", "Content-Type", "X-Auth-Token"})
+	originsOk := handlers.AllowedOrigins([]string{frontendAllowedCORS})
+	methodsOk := handlers.AllowedMethods([]string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"})
 
 	fmt.Printf("Listen and Serve HTTP server on port %s\n", port)
-	http.ListenAndServe(port, r)
-
+	http.ListenAndServe(port, handlers.CORS(originsOk, headersOk, methodsOk)(r))
 }
 
 func initDbConnection() DAL.Database {

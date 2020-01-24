@@ -12,6 +12,7 @@ type Expense struct {
 	UserID     primitive.ObjectID `json:"userId,omitempty" bson:"_userId,omitempty"`
 	AccountID  primitive.ObjectID `json:"accountId,omitempty" bson:"_accountId,omitempty"`
 	CategoryID primitive.ObjectID `json:"categoryId,omitempty" bson:"_categoryId,omitempty"`
+	Title      string             `json:"title,omitempty" bson:"title,omitempty"`
 	Amount     float32            `json:"amount,omitempty" bson:"amount,omitempty"`
 	AddedDate  time.Time          `json:"addedDate,omitempty" bson:"addedDate,omitempty"`
 }

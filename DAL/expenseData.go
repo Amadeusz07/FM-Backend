@@ -3,6 +3,7 @@ package DAL
 import (
 	"context"
 	"fmt"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"time"
 
 	"../models"
@@ -18,10 +19,38 @@ type (
 	}
 	// ExpenseData main interface
 	ExpenseData interface {
+		GetLastHistory(count int64) []models.Expense
 		GetDataByID(id primitive.ObjectID) models.Expense
 		AddExpense(expense *models.Expense) primitive.ObjectID
 	}
 )
+
+func (repo expenseRepo) GetLastHistory(count int64) []models.Expense {
+	ctx, cancFunc := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancFunc()
+	var result []models.Expense
+	t := time.Now()
+	filter := bson.M{"addedDate": bson.M{"$gt": time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, t.Location())}}
+	opts := options.Find().SetSort(bson.D{{"addedDate", -1}}).SetLimit(count)
+	cursor, err := repo.collection.Find(ctx, filter, opts)
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer cursor.Close(ctx)
+
+	for cursor.Next(ctx) {
+		var expenseBson bson.M
+		var expense models.Expense
+		if err = cursor.Decode(&expenseBson); err != nil {
+			fmt.Println(err)
+		}
+		bsonBytes, _ := bson.Marshal(expenseBson)
+		bson.Unmarshal(bsonBytes, &expense)
+		result = append(result, expense)
+	}
+
+	return result
+}
 
 func (repo expenseRepo) GetDataByID(id primitive.ObjectID) models.Expense {
 	ctx, cancFunc := context.WithTimeout(context.Background(), 5*time.Second)
