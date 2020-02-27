@@ -48,7 +48,7 @@ func initHTTPServer() {
 	s.HandleFunc("/categories/{id}", controllers.UpdateCategory).Methods(http.MethodPut)
 	s.HandleFunc("/categories/{id}", controllers.DeleteCategory).Methods(http.MethodDelete)
 
-	headersOk := handlers.AllowedHeaders([]string{"Origin", "Content-Type", "X-Auth-Token", "Token"})
+	headersOk := handlers.AllowedHeaders([]string{"Origin", "Content-Type", "X-Auth-Token", "Token", "Authorization"})
 	originsOk := handlers.AllowedOrigins([]string{frontendAllowedCORS})
 	methodsOk := handlers.AllowedMethods([]string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"})
 
