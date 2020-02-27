@@ -13,6 +13,7 @@ type (
 	Database interface {
 		NewExpenseData() ExpenseData
 		NewCategoryData() CategoryData
+		NewUserData() UserData
 	}
 )
 
@@ -29,12 +30,19 @@ func NewDatabase(env string, client *mongo.Client) Database {
 
 func (conn connection) NewExpenseData() ExpenseData {
 	return expenseRepo{
-		collection: conn.database.Collection("expenses"),
+		collection:         conn.database.Collection("expenses"),
+		categoryCollection: conn.database.Collection("categories"),
 	}
 }
 
 func (conn connection) NewCategoryData() CategoryData {
 	return categoryRepo{
 		collection: conn.database.Collection("categories"),
+	}
+}
+
+func (conn connection) NewUserData() UserData {
+	return userRepo{
+		collection: conn.database.Collection("users"),
 	}
 }

@@ -22,34 +22,37 @@ func NewExpensesController(expense DAL.ExpenseData) {
 
 // GetExpenses /expenses?count=int64
 func GetExpenses(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
 	count, err := strconv.ParseInt(r.URL.Query().Get("count"), 10, 16)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	result := expenseData.GetLastHistory(count)
+	userId, _ := primitive.ObjectIDFromHex(r.Header.Get("userId"))
+	result := expenseData.GetLastHistory(userId, count)
+
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(result)
 }
 
 // GetExpense /expenses/{id}
 func GetExpense(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
 	vars := mux.Vars(r)
 	id, err := primitive.ObjectIDFromHex(vars["id"])
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	result := expenseData.GetDataByID(id)
+	userId, _ := primitive.ObjectIDFromHex(r.Header.Get("userId"))
+	result := expenseData.GetDataByID(userId, id)
+
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(result)
 }
 
 // AddExpense /expenses
 func AddExpense(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
 	decoder := json.NewDecoder(r.Body)
 	var expense models.Expense
 	err := decoder.Decode(&expense)
@@ -58,7 +61,10 @@ func AddExpense(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	id := expenseData.AddExpense(&expense)
+	userId, _ := primitive.ObjectIDFromHex(r.Header.Get("userId"))
+	id := expenseData.AddExpense(userId, &expense)
+
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(struct {
 		ID primitive.ObjectID

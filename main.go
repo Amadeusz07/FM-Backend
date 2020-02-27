@@ -8,6 +8,7 @@ import (
 
 	"./DAL"
 	"./controllers"
+	authService "./services/auth"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -24,23 +25,30 @@ func main() {
 	db := initDbConnection()
 	controllers.NewExpensesController(db.NewExpenseData())
 	controllers.NewCategoriesController(db.NewCategoryData())
+	controllers.NewAuthController(db.NewUserData())
+	//tok, _ := auth.GenerateJWT()
+	//fmt.Println(tok)
 	initHTTPServer()
 }
 
 func initHTTPServer() {
 	fmt.Println("Starting HTTP Server")
 	r := mux.NewRouter()
-	r.HandleFunc("/expenses", controllers.GetExpenses).Queries("count", "{count}").Methods(http.MethodGet)
-	r.HandleFunc("/expenses", controllers.AddExpense).Methods(http.MethodPost)
-	r.HandleFunc("/expenses/{id}", controllers.GetExpense).Methods(http.MethodGet)
+	r.HandleFunc("/register", controllers.Register).Methods(http.MethodPost)
+	r.HandleFunc("/login", controllers.Login).Methods(http.MethodPost)
+	s := r.PathPrefix("").Subrouter()
+	s.Use(authService.IsAuthorized)
+	s.HandleFunc("/expenses", controllers.GetExpenses).Queries("count", "{count}").Methods(http.MethodGet)
+	s.HandleFunc("/expenses", controllers.AddExpense).Methods(http.MethodPost)
+	s.HandleFunc("/expenses/{id}", controllers.GetExpense).Methods(http.MethodGet)
 
-	r.HandleFunc("/categories", controllers.GetCategories).Methods(http.MethodGet)
-	r.HandleFunc("/categories", controllers.AddCategory).Methods(http.MethodPost)
-	r.HandleFunc("/categories/{id}", controllers.GetCategory).Methods(http.MethodGet)
-	r.HandleFunc("/categories/{id}", controllers.UpdateCategory).Methods(http.MethodPut)
-	r.HandleFunc("/categories/{id}", controllers.DeleteCategory).Methods(http.MethodDelete)
+	s.HandleFunc("/categories", controllers.GetCategories).Methods(http.MethodGet)
+	s.HandleFunc("/categories", controllers.AddCategory).Methods(http.MethodPost)
+	s.HandleFunc("/categories/{id}", controllers.GetCategory).Methods(http.MethodGet)
+	s.HandleFunc("/categories/{id}", controllers.UpdateCategory).Methods(http.MethodPut)
+	s.HandleFunc("/categories/{id}", controllers.DeleteCategory).Methods(http.MethodDelete)
 
-	headersOk := handlers.AllowedHeaders([]string{"Origin", "Content-Type", "X-Auth-Token"})
+	headersOk := handlers.AllowedHeaders([]string{"Origin", "Content-Type", "X-Auth-Token", "Token"})
 	originsOk := handlers.AllowedOrigins([]string{frontendAllowedCORS})
 	methodsOk := handlers.AllowedMethods([]string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"})
 

@@ -15,22 +15,26 @@ import (
 
 type (
 	expenseRepo struct {
-		collection *mongo.Collection
+		collection         *mongo.Collection
+		categoryCollection *mongo.Collection
 	}
 	// ExpenseData main interface
 	ExpenseData interface {
-		GetLastHistory(count int64) []models.Expense
-		GetDataByID(id primitive.ObjectID) models.Expense
-		AddExpense(expense *models.Expense) primitive.ObjectID
+		GetLastHistory(userId primitive.ObjectID, count int64) []models.Expense
+		GetDataByID(userId primitive.ObjectID, id primitive.ObjectID) models.Expense
+		AddExpense(userId primitive.ObjectID, expense *models.Expense) primitive.ObjectID
 	}
 )
 
-func (repo expenseRepo) GetLastHistory(count int64) []models.Expense {
+func (repo expenseRepo) GetLastHistory(userId primitive.ObjectID, count int64) []models.Expense {
 	ctx, cancFunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancFunc()
 	var result []models.Expense
 	t := time.Now()
-	filter := bson.M{"addedDate": bson.M{"$gt": time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, t.Location())}}
+	filter := bson.M{
+		"addedDate": bson.M{"$gt": time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, t.Location())},
+		"_userId":   userId,
+	}
 	opts := options.Find().SetSort(bson.D{{"addedDate", -1}}).SetLimit(count)
 	cursor, err := repo.collection.Find(ctx, filter, opts)
 	if err != nil {
@@ -46,16 +50,21 @@ func (repo expenseRepo) GetLastHistory(count int64) []models.Expense {
 		}
 		bsonBytes, _ := bson.Marshal(expenseBson)
 		bson.Unmarshal(bsonBytes, &expense)
+		filter = bson.M{"_id": expense.CategoryID}
+		err = repo.categoryCollection.FindOne(ctx, filter).Decode(&expense.Category)
+		if err != nil {
+			fmt.Println(err)
+		}
 		result = append(result, expense)
 	}
 
 	return result
 }
 
-func (repo expenseRepo) GetDataByID(id primitive.ObjectID) models.Expense {
+func (repo expenseRepo) GetDataByID(userId primitive.ObjectID, id primitive.ObjectID) models.Expense {
 	ctx, cancFunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancFunc()
-	filter := bson.M{"_id": id}
+	filter := bson.M{"_id": id, "_userId": userId}
 	var result models.Expense
 	err := repo.collection.FindOne(ctx, filter).Decode(&result)
 	if err != nil {
@@ -64,8 +73,9 @@ func (repo expenseRepo) GetDataByID(id primitive.ObjectID) models.Expense {
 	return result
 }
 
-func (repo expenseRepo) AddExpense(expense *models.Expense) primitive.ObjectID {
+func (repo expenseRepo) AddExpense(userId primitive.ObjectID, expense *models.Expense) primitive.ObjectID {
 	expense.AddedDate = time.Now()
+	expense.UserID = userId
 	ctx, cancFunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancFunc()
 	res, err := repo.collection.InsertOne(ctx, expense)

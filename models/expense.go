@@ -15,4 +15,5 @@ type Expense struct {
 	Title      string             `json:"title,omitempty" bson:"title,omitempty"`
 	Amount     float32            `json:"amount,omitempty" bson:"amount,omitempty"`
 	AddedDate  time.Time          `json:"addedDate,omitempty" bson:"addedDate,omitempty"`
+	Category   Category           `json:"category,omitempty" bson:"-"`
 }

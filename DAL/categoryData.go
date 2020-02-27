@@ -76,7 +76,7 @@ func (repo categoryRepo) AddCategory(category *models.Category) primitive.Object
 func (repo categoryRepo) UpdateCategory(id primitive.ObjectID, category *models.Category) {
 	ctx, cancFunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancFunc()
-	filter := bson.M{"_id": category.ID}
+	filter := bson.M{"_id": id}
 	update := bson.M{"$set": bson.M{"name": category.Name}}
 	_, err := repo.collection.UpdateOne(ctx, filter, update)
 	if err != nil {
