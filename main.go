@@ -36,6 +36,7 @@ func initHTTPServer() {
 	r := mux.NewRouter()
 	r.HandleFunc("/register", controllers.Register).Methods(http.MethodPost)
 	r.HandleFunc("/login", controllers.Login).Methods(http.MethodPost)
+	r.HandleFunc("/logout", controllers.Logout).Methods(http.MethodPost)
 	s := r.PathPrefix("").Subrouter()
 	s.Use(authService.IsAuthorized)
 	s.HandleFunc("/expenses", controllers.GetExpenses).Queries("count", "{count}").Methods(http.MethodGet)

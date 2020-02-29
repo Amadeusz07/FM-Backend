@@ -21,7 +21,8 @@ func NewCategoriesController(category DAL.CategoryData) {
 // GetCategories /categories
 func GetCategories(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	result := categoryData.GetCategories()
+	userId, _ := primitive.ObjectIDFromHex(r.Header.Get("userId"))
+	result := categoryData.GetCategories(userId)
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(result)
 }
@@ -29,13 +30,14 @@ func GetCategories(w http.ResponseWriter, r *http.Request) {
 // GetCategory /categories/:id
 func GetCategory(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	userId, _ := primitive.ObjectIDFromHex(r.Header.Get("userId"))
 	vars := mux.Vars(r)
 	id, err := primitive.ObjectIDFromHex(vars["id"])
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	result := categoryData.GetDataByID(id)
+	result := categoryData.GetDataByID(userId, id)
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(result)
 }
@@ -43,6 +45,7 @@ func GetCategory(w http.ResponseWriter, r *http.Request) {
 // AddCategory /categories
 func AddCategory(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	userId, _ := primitive.ObjectIDFromHex(r.Header.Get("userId"))
 	decoder := json.NewDecoder(r.Body)
 	var category models.Category
 	err := decoder.Decode(&category)
@@ -51,7 +54,7 @@ func AddCategory(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	id := categoryData.AddCategory(&category)
+	id := categoryData.AddCategory(userId, &category)
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(struct {
 		ID primitive.ObjectID
@@ -61,6 +64,7 @@ func AddCategory(w http.ResponseWriter, r *http.Request) {
 // UpdateCategory /categories/:id
 func UpdateCategory(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	userId, _ := primitive.ObjectIDFromHex(r.Header.Get("userId"))
 	decoder := json.NewDecoder(r.Body)
 	var category models.Category
 	if err := decoder.Decode(&category); err != nil {
@@ -73,19 +77,28 @@ func UpdateCategory(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	categoryData.UpdateCategory(id, &category)
+	categoryData.UpdateCategory(userId, id, &category)
 	w.WriteHeader(http.StatusNoContent)
 }
 
 // DeleteCategory /categories/:id
 func DeleteCategory(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	userId, _ := primitive.ObjectIDFromHex(r.Header.Get("userId"))
 	vars := mux.Vars(r)
 	id, err := primitive.ObjectIDFromHex(vars["id"])
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	categoryData.DeleteCategory(id)
+	categoryData.DeleteCategory(userId, id)
 	w.WriteHeader(http.StatusAccepted)
+}
+
+func GetCategoriesSummary(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	userId, _ := primitive.ObjectIDFromHex(r.Header.Get("userId"))
+	result := categoryData.GetSummary(userId)
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(result)
 }

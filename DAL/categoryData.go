@@ -19,20 +19,22 @@ type (
 	}
 	// CategoryData main interface
 	CategoryData interface {
-		GetDataByID(id primitive.ObjectID) models.Category
-		GetCategories() []models.Category
-		AddCategory(expense *models.Category) primitive.ObjectID
-		UpdateCategory(id primitive.ObjectID, category *models.Category)
-		DeleteCategory(id primitive.ObjectID)
+		GetDataByID(userId primitive.ObjectID, id primitive.ObjectID) models.Category
+		GetCategories(userId primitive.ObjectID) []models.Category
+		AddCategory(userId primitive.ObjectID, expense *models.Category) primitive.ObjectID
+		UpdateCategory(userId primitive.ObjectID, id primitive.ObjectID, category *models.Category)
+		DeleteCategory(userId primitive.ObjectID, id primitive.ObjectID)
+		GetSummary(userId primitive.ObjectID)
 	}
 )
 
-func (repo categoryRepo) GetCategories() []models.Category {
+func (repo categoryRepo) GetCategories(userId primitive.ObjectID) []models.Category {
 	ctx, cancFunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancFunc()
 	var result []models.Category
+	filter := bson.M{"_userId": userId}
 	opts := options.Find().SetSort(bson.D{{"name", 1}})
-	cursor, err := repo.collection.Find(ctx, bson.D{}, opts)
+	cursor, err := repo.collection.Find(ctx, filter, opts)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -51,10 +53,10 @@ func (repo categoryRepo) GetCategories() []models.Category {
 	return result
 }
 
-func (repo categoryRepo) GetDataByID(id primitive.ObjectID) models.Category {
+func (repo categoryRepo) GetDataByID(userId primitive.ObjectID, id primitive.ObjectID) models.Category {
 	ctx, cancFunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancFunc()
-	filter := bson.M{"_id": id}
+	filter := bson.M{"_id": id, "_userId": userId}
 	var result models.Category
 	err := repo.collection.FindOne(ctx, filter).Decode(&result)
 	if err != nil {
@@ -63,8 +65,9 @@ func (repo categoryRepo) GetDataByID(id primitive.ObjectID) models.Category {
 	return result
 }
 
-func (repo categoryRepo) AddCategory(category *models.Category) primitive.ObjectID {
+func (repo categoryRepo) AddCategory(userId primitive.ObjectID, category *models.Category) primitive.ObjectID {
 	ctx, cancFunc := context.WithTimeout(context.Background(), 5*time.Second)
+	category.UserID = userId
 	defer cancFunc()
 	res, err := repo.collection.InsertOne(ctx, category)
 	if err != nil {
@@ -73,10 +76,10 @@ func (repo categoryRepo) AddCategory(category *models.Category) primitive.Object
 	return res.InsertedID.(primitive.ObjectID)
 }
 
-func (repo categoryRepo) UpdateCategory(id primitive.ObjectID, category *models.Category) {
+func (repo categoryRepo) UpdateCategory(userId primitive.ObjectID, id primitive.ObjectID, category *models.Category) {
 	ctx, cancFunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancFunc()
-	filter := bson.M{"_id": id}
+	filter := bson.M{"_id": id, "_userId": userId}
 	update := bson.M{"$set": bson.M{"name": category.Name}}
 	_, err := repo.collection.UpdateOne(ctx, filter, update)
 	if err != nil {
@@ -84,12 +87,35 @@ func (repo categoryRepo) UpdateCategory(id primitive.ObjectID, category *models.
 	}
 }
 
-func (repo categoryRepo) DeleteCategory(id primitive.ObjectID) {
+func (repo categoryRepo) DeleteCategory(userId primitive.ObjectID, id primitive.ObjectID) {
 	ctx, cancFunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancFunc()
-	filter := bson.M{"_id": id}
+	filter := bson.M{"_id": id, "_userId": userId}
 	_, err := repo.collection.DeleteOne(ctx, filter)
 	if err != nil {
 		fmt.Println(err)
 	}
+}
+
+func (repo categoryRepo) GetSummary(userId primitive.ObjectID) {
+	ctx, cancFunc := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancFunc()
+	filter := bson.M{"_userId": userId}
+	cursor, err := repo.collection.Find(ctx, filter)
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer cursor.Close(ctx)
+	var result []models.Category
+	for cursor.Next(ctx) {
+		var categoryBson bson.M
+		var category models.Category
+		if err = cursor.Decode(&categoryBson); err != nil {
+			fmt.Println(err)
+		}
+		bsonBytes, _ := bson.Marshal(categoryBson)
+		bson.Unmarshal(bsonBytes, &category)
+		result = append(result, category)
+	}
+	return result
 }
