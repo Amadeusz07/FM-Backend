@@ -26,8 +26,6 @@ func main() {
 	controllers.NewExpensesController(db.NewExpenseData())
 	controllers.NewCategoriesController(db.NewCategoryData())
 	controllers.NewAuthController(db.NewUserData())
-	//tok, _ := auth.GenerateJWT()
-	//fmt.Println(tok)
 	initHTTPServer()
 }
 
@@ -43,6 +41,7 @@ func initHTTPServer() {
 	s.HandleFunc("/expenses", controllers.AddExpense).Methods(http.MethodPost)
 	s.HandleFunc("/expenses/{id}", controllers.GetExpense).Methods(http.MethodGet)
 
+	s.HandleFunc("/categories/category-summary", controllers.GetCategoriesSummary).Methods(http.MethodGet)
 	s.HandleFunc("/categories", controllers.GetCategories).Methods(http.MethodGet)
 	s.HandleFunc("/categories", controllers.AddCategory).Methods(http.MethodPost)
 	s.HandleFunc("/categories/{id}", controllers.GetCategory).Methods(http.MethodGet)

@@ -24,7 +24,6 @@ type (
 		AddCategory(userId primitive.ObjectID, expense *models.Category) primitive.ObjectID
 		UpdateCategory(userId primitive.ObjectID, id primitive.ObjectID, category *models.Category)
 		DeleteCategory(userId primitive.ObjectID, id primitive.ObjectID)
-		GetSummary(userId primitive.ObjectID)
 	}
 )
 
@@ -95,27 +94,4 @@ func (repo categoryRepo) DeleteCategory(userId primitive.ObjectID, id primitive.
 	if err != nil {
 		fmt.Println(err)
 	}
-}
-
-func (repo categoryRepo) GetSummary(userId primitive.ObjectID) {
-	ctx, cancFunc := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancFunc()
-	filter := bson.M{"_userId": userId}
-	cursor, err := repo.collection.Find(ctx, filter)
-	if err != nil {
-		fmt.Println(err)
-	}
-	defer cursor.Close(ctx)
-	var result []models.Category
-	for cursor.Next(ctx) {
-		var categoryBson bson.M
-		var category models.Category
-		if err = cursor.Decode(&categoryBson); err != nil {
-			fmt.Println(err)
-		}
-		bsonBytes, _ := bson.Marshal(categoryBson)
-		bson.Unmarshal(bsonBytes, &category)
-		result = append(result, category)
-	}
-	return result
 }

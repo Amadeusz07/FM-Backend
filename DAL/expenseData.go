@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"log"
 	"time"
 
 	"../models"
@@ -23,6 +24,7 @@ type (
 		GetLastHistory(userId primitive.ObjectID, count int64) []models.Expense
 		GetDataByID(userId primitive.ObjectID, id primitive.ObjectID) models.Expense
 		AddExpense(userId primitive.ObjectID, expense *models.Expense) primitive.ObjectID
+		GetSummary(userId primitive.ObjectID) []models.CategorySummary
 	}
 )
 
@@ -83,4 +85,42 @@ func (repo expenseRepo) AddExpense(userId primitive.ObjectID, expense *models.Ex
 		fmt.Println(err)
 	}
 	return res.InsertedID.(primitive.ObjectID)
+}
+
+func (repo expenseRepo) GetSummary(userId primitive.ObjectID) []models.CategorySummary {
+	ctx, cancFunc := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancFunc()
+	pipeline := []bson.M{
+		{"$match": bson.M{"_userId": userId}},
+		{"$group": bson.M{
+			"_id": "$_categoryId",
+			"sum": bson.M{"$sum": "$amount"},
+		}},
+	}
+
+	cursor, err := repo.collection.Aggregate(ctx, pipeline)
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	defer cursor.Close(context.Background())
+	var results []models.CategorySummary
+	for cursor.Next(context.Background()) {
+		var doc models.CategorySummary
+		err := cursor.Decode(&doc)
+		if err != nil {
+			log.Fatal(err)
+		}
+		filter := bson.M{"_id": doc.ID}
+		var category models.Category
+		err = repo.categoryCollection.FindOne(ctx, filter).Decode(&category)
+		if err != nil {
+			fmt.Println(err)
+			return nil
+		}
+		doc.CategoryName = category.Name
+		results = append(results, doc)
+	}
+	return results
+	//filter := bson.M{"_userId": userId}
 }

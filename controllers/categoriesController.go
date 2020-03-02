@@ -98,7 +98,11 @@ func DeleteCategory(w http.ResponseWriter, r *http.Request) {
 func GetCategoriesSummary(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	userId, _ := primitive.ObjectIDFromHex(r.Header.Get("userId"))
-	result := categoryData.GetSummary(userId)
+	result := expenseData.GetSummary(userId)
+	if result == nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(result)
 }
