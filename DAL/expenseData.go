@@ -25,6 +25,7 @@ type (
 		GetDataByID(userId primitive.ObjectID, id primitive.ObjectID) models.Expense
 		AddExpense(userId primitive.ObjectID, expense *models.Expense) primitive.ObjectID
 		GetSummary(userId primitive.ObjectID) []models.CategorySummary
+		IsAnyInCategory(userId primitive.ObjectID, categoryId primitive.ObjectID) bool
 	}
 )
 
@@ -122,5 +123,12 @@ func (repo expenseRepo) GetSummary(userId primitive.ObjectID) []models.CategoryS
 		results = append(results, doc)
 	}
 	return results
-	//filter := bson.M{"_userId": userId}
+}
+
+func (repo expenseRepo) IsAnyInCategory(userId primitive.ObjectID, categoryId primitive.ObjectID) bool {
+	ctx, cancFunc := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancFunc()
+	filter := bson.M{"_categoryId": categoryId, "_userId": userId}
+	count, _ := repo.collection.CountDocuments(ctx, filter)
+	return count > 0
 }
