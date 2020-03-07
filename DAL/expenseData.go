@@ -21,24 +21,33 @@ type (
 	}
 	// ExpenseData main interface
 	ExpenseData interface {
-		GetLastHistory(userId primitive.ObjectID, count int64) []models.Expense
+		GetLastHistory(userId primitive.ObjectID, count int64, date time.Time) []models.Expense
 		GetDataByID(userId primitive.ObjectID, id primitive.ObjectID) models.Expense
 		AddExpense(userId primitive.ObjectID, expense *models.Expense) primitive.ObjectID
+		DeleteExpense(userId primitive.ObjectID, expenseId primitive.ObjectID)
 		GetSummary(userId primitive.ObjectID) []models.CategorySummary
 		IsAnyInCategory(userId primitive.ObjectID, categoryId primitive.ObjectID) bool
 	}
 )
 
-func (repo expenseRepo) GetLastHistory(userId primitive.ObjectID, count int64) []models.Expense {
+func (repo expenseRepo) GetLastHistory(userId primitive.ObjectID, count int64, date time.Time) []models.Expense {
 	ctx, cancFunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancFunc()
 	var result []models.Expense
-	t := time.Now()
+	//t := time.Now()
+	fromDate := time.Date(date.Year(), date.Month(), 1, 0, 0, 0, 0, time.UTC)
+	toDate := time.Date(date.Year(), date.Month()+1, 1, 0, 0, 0, 0, time.UTC)
 	filter := bson.M{
-		"addedDate": bson.M{"$gt": time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, t.Location())},
-		"_userId":   userId,
+		"addedDate": bson.M{
+			"$gt": fromDate,
+			"$lt": toDate,
+		},
+		"_userId": userId,
 	}
-	opts := options.Find().SetSort(bson.D{{"addedDate", -1}}).SetLimit(count)
+	opts := options.Find().SetSort(bson.D{{"addedDate", -1}})
+	if count != 0 {
+		opts = opts.SetLimit(count)
+	}
 	cursor, err := repo.collection.Find(ctx, filter, opts)
 	if err != nil {
 		fmt.Println(err)
@@ -86,6 +95,16 @@ func (repo expenseRepo) AddExpense(userId primitive.ObjectID, expense *models.Ex
 		fmt.Println(err)
 	}
 	return res.InsertedID.(primitive.ObjectID)
+}
+
+func (repo expenseRepo) DeleteExpense(userId primitive.ObjectID, id primitive.ObjectID) {
+	ctx, cancFunc := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancFunc()
+	filter := bson.M{"_id": id, "_userId": userId}
+	_, err := repo.collection.DeleteOne(ctx, filter)
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 
 func (repo expenseRepo) GetSummary(userId primitive.ObjectID) []models.CategorySummary {

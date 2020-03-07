@@ -37,9 +37,10 @@ func initHTTPServer() {
 	r.HandleFunc("/logout", controllers.Logout).Methods(http.MethodPost)
 	s := r.PathPrefix("").Subrouter()
 	s.Use(authService.IsAuthorized)
-	s.HandleFunc("/expenses", controllers.GetExpenses).Queries("count", "{count}").Methods(http.MethodGet)
+	s.HandleFunc("/expenses", controllers.GetExpenses).Queries("count", "{count}").Queries("date", "{date}").Methods(http.MethodGet)
 	s.HandleFunc("/expenses", controllers.AddExpense).Methods(http.MethodPost)
 	s.HandleFunc("/expenses/{id}", controllers.GetExpense).Methods(http.MethodGet)
+	s.HandleFunc("/expenses/{id}", controllers.DeleteExpense).Methods(http.MethodDelete)
 
 	s.HandleFunc("/categories/category-summary", controllers.GetCategoriesSummary).Methods(http.MethodGet)
 	s.HandleFunc("/categories", controllers.GetCategories).Methods(http.MethodGet)

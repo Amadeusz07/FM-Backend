@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"../DAL"
 	"../models"
@@ -27,8 +28,13 @@ func GetExpenses(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	date, err := time.Parse("2006-01-02", r.URL.Query().Get("date"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 	userId, _ := primitive.ObjectIDFromHex(r.Header.Get("userId"))
-	result := expenseData.GetLastHistory(userId, count)
+	result := expenseData.GetLastHistory(userId, count, date)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -69,4 +75,17 @@ func AddExpense(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(struct {
 		ID primitive.ObjectID
 	}{id})
+}
+
+func DeleteExpense(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	userId, _ := primitive.ObjectIDFromHex(r.Header.Get("userId"))
+	vars := mux.Vars(r)
+	id, err := primitive.ObjectIDFromHex(vars["id"])
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	expenseData.DeleteExpense(userId, id)
+	w.WriteHeader(http.StatusAccepted)
 }
