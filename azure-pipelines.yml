@@ -21,15 +21,15 @@ steps:
 - task: Go@0
   displayName: 'go build'
   inputs:
-     command: build
-     arguments: '-o "$(System.TeamProject).exe"'
-     workingDirectory: '$(System.DefaultWorkingDirectory)'
+    command: build
+    arguments: '-o "$(System.TeamProject).exe"'
+    workingDirectory: '$(System.DefaultWorkingDirectory)/Application'
 - task: ArchiveFiles@2
   displayName: 'Archive Files'
   inputs:
-     rootFolderOrFile: '$(Build.Repository.LocalPath)'     
-     includeRootFolder: False 
+    rootFolderOrFile: '$(Build.Repository.LocalPath)/Application'
+    includeRootFolder: False
 - task: PublishBuildArtifacts@1
   displayName: 'Publish Artifact'
   inputs:
-     artifactName: drop
+     artifactName: golangbackend
