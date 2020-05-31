@@ -44,10 +44,8 @@ func (repo expenseRepo) GetLastHistory(userId primitive.ObjectID, count int64, d
 		},
 		"_userId": userId,
 	}
-	opts := options.Find().SetSort(bson.D{{"addedDate", -1}})
-	if count != 0 {
-		opts = opts.SetLimit(count)
-	}
+	//opts := options.Find().SetSort(bson.D{{"addedDate", -1}})
+	opts := options.Find().SetLimit(count)
 	cursor, err := repo.collection.Find(ctx, filter, opts)
 	if err != nil {
 		fmt.Println(err)

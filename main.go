@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"time"
@@ -17,7 +18,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-const mongoURL = "mongodb://localhost:27017"
+//const mongoURL = "mongodb://localhost:27017"
+const mongoURL = "mongodb://us-fm:MGDAfWNa4xc0PsRs7bYR3ntO4RbXOVlNgVsqzRZUPWIgAfnlmSCyVvj1H67RQ9jlDMwQsDL5DE8Csq8kD6a06A==@us-fm.mongo.cosmos.azure.com:10255/?ssl=true&replicaSet=globaldb&maxIdleTimeMS=120000&appName=@us-fm@"
 const env = "local"
 const frontendAllowedCORS = "http://localhost:4200"
 
@@ -64,7 +66,7 @@ func initHTTPServer() {
 
 func initDbConnection() DAL.Database {
 	fmt.Println("Starting connection to MongoDB")
-	client, err := mongo.NewClient(options.Client().ApplyURI(mongoURL))
+	client, err := mongo.NewClient(options.Client().ApplyURI(mongoURL).SetDirect(true))
 	if err != nil {
 		panic("Error on creating MongoDB Client")
 	}
@@ -72,7 +74,11 @@ func initDbConnection() DAL.Database {
 	defer canc()
 	err = client.Connect(ctx)
 	if err != nil {
-		panic("Error on connecting to MongoDB")
+		log.Fatal("Error on connecting to MongoDB")
+	}
+	err = client.Ping(context.TODO(), nil)
+	if err != nil {
+		log.Fatal(err)
 	}
 	fmt.Printf("Connected to MongoDB server %s \n", mongoURL)
 

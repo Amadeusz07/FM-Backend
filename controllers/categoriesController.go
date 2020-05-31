@@ -23,8 +23,12 @@ func GetCategories(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	userId, _ := primitive.ObjectIDFromHex(r.Header.Get("userId"))
 	result := categoryData.GetCategories(userId)
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(result)
+	if result == nil {
+		w.WriteHeader(http.StatusNotFound)
+	} else {
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(result)
+	}
 }
 
 // GetCategory /categories/:id

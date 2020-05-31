@@ -10,7 +10,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type (
@@ -32,10 +31,11 @@ func (repo categoryRepo) GetCategories(userId primitive.ObjectID) []models.Categ
 	defer cancFunc()
 	var result []models.Category
 	filter := bson.M{"_userId": userId}
-	opts := options.Find().SetSort(bson.D{{"name", 1}})
-	cursor, err := repo.collection.Find(ctx, filter, opts)
+	//opts := options.Find().SetSort(bson.D{{"name", 1}})
+	cursor, err := repo.collection.Find(ctx, filter, nil)
 	if err != nil {
 		fmt.Println(err)
+		return nil
 	}
 	defer cursor.Close(ctx)
 
