@@ -50,10 +50,6 @@ func IsAuthorized(next http.Handler) http.Handler {
 	})
 }
 
-//func GetIssuer(token string) primitive.ObjectID {
-//
-//}
-
 func GenerateJWT(userId primitive.ObjectID, username string, expDate time.Time) (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)

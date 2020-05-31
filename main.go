@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"./DAL"
@@ -18,7 +19,6 @@ import (
 
 const mongoURL = "mongodb://localhost:27017"
 const env = "local"
-const port = ":8080"
 const frontendAllowedCORS = "http://localhost:4200"
 
 func main() {
@@ -32,6 +32,8 @@ func main() {
 func initHTTPServer() {
 	fmt.Println("Starting HTTP Server")
 	r := mux.NewRouter()
+	r.HandleFunc("/", controllers.Healthcheck).Methods(http.MethodGet)
+	r.HandleFunc("/ping", controllers.Ping).Methods(http.MethodGet)
 	r.HandleFunc("/register", controllers.Register).Methods(http.MethodPost)
 	r.HandleFunc("/login", controllers.Login).Methods(http.MethodPost)
 	r.HandleFunc("/logout", controllers.Logout).Methods(http.MethodPost)
@@ -52,7 +54,10 @@ func initHTTPServer() {
 	headersOk := handlers.AllowedHeaders([]string{"Origin", "Content-Type", "X-Auth-Token", "Token", "Authorization"})
 	originsOk := handlers.AllowedOrigins([]string{frontendAllowedCORS})
 	methodsOk := handlers.AllowedMethods([]string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"})
-
+	port := ":" + os.Getenv("HTTP_PLATFORM_PORT")
+	if port == ":" {
+		port = ":8080"
+	}
 	fmt.Printf("Listen and Serve HTTP server on port %s\n", port)
 	http.ListenAndServe(port, handlers.CORS(originsOk, headersOk, methodsOk)(r))
 }
