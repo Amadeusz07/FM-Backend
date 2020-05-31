@@ -7,24 +7,29 @@ trigger:
  - master
 
 pool:
-   vmImage: 'ubuntu-latest'
-
+   vmImage: 'vs2017-win2016'
 steps: 
 - task: GoTool@0
-  inputs:
-    version: '1.13.5'
+   inputs:
+     version: 1.11.5
+   displayName: 'Use Go 1.11.5'
 - task: Go@0
-  inputs:
-    command: 'get'
-    arguments: '-d'
-    workingDirectory: '$(System.DefaultWorkingDirectory)'
+   displayName: 'go get'
+   inputs:
+     arguments: '-d'
+     workingDirectory: '$(System.DefaultWorkingDirectory)'
 - task: Go@0
-  inputs:
-    command: 'build'
-    workingDirectory: '$(System.DefaultWorkingDirectory)'
-- task: CopyFiles@2
-  inputs:
-    TargetFolder: '$(Build.ArtifactStagingDirectory)'
+   displayName: 'go build'
+   inputs:
+     command: build
+     arguments: '-o "$(System.TeamProject).exe"'
+     workingDirectory: '$(System.DefaultWorkingDirectory)'
+- task: ArchiveFiles@2
+   displayName: 'Archive Files'
+   inputs:
+     rootFolderOrFile: '$(Build.Repository.LocalPath)'     
+     includeRootFolder: False 
 - task: PublishBuildArtifacts@1
-  inputs:
+   displayName: 'Publish Artifact'
+   inputs:
      artifactName: drop
