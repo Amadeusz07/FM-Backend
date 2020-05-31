@@ -1,0 +1,35 @@
+# Go
+# Build your Go project.
+# Add steps that test, save build artifacts, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/go
+
+trigger: 
+ - master
+
+pool:
+   vmImage: 'vs2017-win2016'
+steps: 
+- task: GoTool@0
+  inputs:
+    version: 1.11.5
+  displayName: 'Use Go 1.11.5'
+- task: Go@0
+  displayName: 'go get'
+  inputs:
+     arguments: '-d'
+     workingDirectory: '$(System.DefaultWorkingDirectory)'
+- task: Go@0
+  displayName: 'go build'
+  inputs:
+    command: build
+    arguments: '-o "$(System.TeamProject).exe"'
+    workingDirectory: '$(System.DefaultWorkingDirectory)'
+- task: ArchiveFiles@2
+  displayName: 'Archive Files'
+  inputs:
+    rootFolderOrFile: '$(Build.Repository.LocalPath)'
+    includeRootFolder: False
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact'
+  inputs:
+     artifactName: golangbackend
