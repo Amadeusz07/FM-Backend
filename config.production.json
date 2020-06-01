@@ -1,5 +1,5 @@
 {
-  "production": "#{production}",
-  "connectionString": "#{db-connection-string}",
-  "databaseName": "#{db-database-name}"
+  "production": "#{production}#",
+  "connectionString": "#{db-connection-string}#",
+  "databaseName": "#{db-database-name}#"
 }
