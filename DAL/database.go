@@ -2,6 +2,8 @@ package DAL
 
 import (
 	"go.mongodb.org/mongo-driver/mongo"
+
+	"../config"
 )
 
 type (
@@ -18,14 +20,10 @@ type (
 )
 
 // NewDatabase creates connection to database
-func NewDatabase(env string, client *mongo.Client) Database {
-	switch env {
-	case "local":
-		return connection{
-			database: client.Database("testing"),
-		}
+func NewDatabase(cfg *config.Configuration, client *mongo.Client) Database {
+	return connection{
+		database: client.Database(cfg.DatabaseName),
 	}
-	return nil
 }
 
 func (conn connection) NewExpenseData() ExpenseData {

@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"time"
 
 	"./DAL"
+	"./config"
 	"./controllers"
 	authService "./services/auth"
 
@@ -18,12 +18,12 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-//const mongoURL = "mongodb://localhost:27017"
-const mongoURL = "mongodb://us-fm:MGDAfWNa4xc0PsRs7bYR3ntO4RbXOVlNgVsqzRZUPWIgAfnlmSCyVvj1H67RQ9jlDMwQsDL5DE8Csq8kD6a06A==@us-fm.mongo.cosmos.azure.com:10255/?ssl=true&replicaSet=globaldb&maxIdleTimeMS=120000&appName=@us-fm@"
-const env = "local"
 const frontendAllowedCORS = "http://localhost:4200"
 
+var cfg *config.Configuration
+
 func main() {
+	cfg = config.GetConfig()
 	db := initDbConnection()
 	controllers.NewExpensesController(db.NewExpenseData())
 	controllers.NewCategoriesController(db.NewCategoryData())
@@ -56,17 +56,13 @@ func initHTTPServer() {
 	headersOk := handlers.AllowedHeaders([]string{"Origin", "Content-Type", "X-Auth-Token", "Token", "Authorization"})
 	originsOk := handlers.AllowedOrigins([]string{frontendAllowedCORS})
 	methodsOk := handlers.AllowedMethods([]string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"})
-	port := ":" + os.Getenv("HTTP_PLATFORM_PORT")
-	if port == ":" {
-		port = ":8080"
-	}
-	fmt.Printf("Listen and Serve HTTP server on port %s\n", port)
-	http.ListenAndServe(port, handlers.CORS(originsOk, headersOk, methodsOk)(r))
+	fmt.Printf("Listen and Serve HTTP server on port %s\n", cfg.Port)
+	http.ListenAndServe(cfg.Port, handlers.CORS(originsOk, headersOk, methodsOk)(r))
 }
 
 func initDbConnection() DAL.Database {
 	fmt.Println("Starting connection to MongoDB")
-	client, err := mongo.NewClient(options.Client().ApplyURI(mongoURL).SetDirect(true))
+	client, err := mongo.NewClient(options.Client().ApplyURI(cfg.ConnectionString).SetDirect(true))
 	if err != nil {
 		panic("Error on creating MongoDB Client")
 	}
@@ -80,7 +76,7 @@ func initDbConnection() DAL.Database {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("Connected to MongoDB server %s \n", mongoURL)
+	fmt.Printf("Connected to MongoDB server %s \n", cfg.ConnectionString)
 
-	return DAL.NewDatabase("local", client)
+	return DAL.NewDatabase(cfg, client)
 }
