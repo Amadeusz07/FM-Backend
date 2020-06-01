@@ -3,10 +3,11 @@ package config
 import (
 	"encoding/json"
 	"os"
+	"strconv"
 )
 
 type Configuration struct {
-	Production       bool
+	Production       string
 	ConnectionString string
 	DatabaseName     string
 	Port             string
@@ -37,7 +38,11 @@ func getConfigFile() string {
 }
 
 func setPort(cfg *Configuration) {
-	if cfg.Production {
+	isProd, err := strconv.ParseBool(cfg.Production)
+	if err != nil {
+		panic(err)
+	}
+	if isProd {
 		cfg.Port = ":" + os.Getenv("HTTP_PLATFORM_PORT")
 	} else {
 		cfg.Port = ":8080"
