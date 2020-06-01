@@ -28,7 +28,7 @@ func GetConfig() *Configuration {
 }
 
 func getConfigFile() string {
-	envVariable := os.Getenv("APPSETTINGS_ENVIRONMENT")
+	envVariable := os.Getenv("WEBAPI_ENVIRONMENT")
 	if envVariable == "PROD" {
 		return "config.production.json"
 	} else {
@@ -37,9 +37,9 @@ func getConfigFile() string {
 }
 
 func setPort(cfg *Configuration) {
-	port := ":" + os.Getenv("HTTP_PLATFORM_PORT")
-	if port == ":" {
-		port = ":8080"
+	if cfg.Production {
+		cfg.Port = ":" + os.Getenv("HTTP_PLATFORM_PORT")
+	} else {
+		cfg.Port = ":8080"
 	}
-	cfg.Port = port
 }
