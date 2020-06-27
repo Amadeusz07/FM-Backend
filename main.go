@@ -25,6 +25,7 @@ var cfg *config.Configuration
 func main() {
 	cfg = config.GetConfig()
 	db := initDbConnection()
+	controllers.NewProjectsController(db.NewProjectData())
 	controllers.NewExpensesController(db.NewExpenseData())
 	controllers.NewCategoriesController(db.NewCategoryData())
 	controllers.NewAuthController(db.NewUserData())
@@ -39,8 +40,17 @@ func initHTTPServer() {
 	r.HandleFunc("/register", controllers.Register).Methods(http.MethodPost)
 	r.HandleFunc("/login", controllers.Login).Methods(http.MethodPost)
 	r.HandleFunc("/logout", controllers.Logout).Methods(http.MethodPost)
+
 	s := r.PathPrefix("").Subrouter()
 	s.Use(authService.IsAuthorized)
+
+	s.HandleFunc("/projects", controllers.GetProjectByOwnerId).Methods(http.MethodGet)
+	s.HandleFunc("/projects", controllers.CreateProject).Methods(http.MethodPost)
+	//if is owner
+	s.HandleFunc("/projects/{id}", controllers.UpdateProject).Methods(http.MethodPut)
+	s.HandleFunc("/projects/{id}/assignUser", controllers.AssignUser).Methods(http.MethodPost)
+	s.HandleFunc("/projects/{id}/unAssignUser", controllers.UnAssignUser).Methods(http.MethodPost)
+
 	s.HandleFunc("/expenses", controllers.GetExpenses).Queries("count", "{count}").Queries("date", "{date}").Methods(http.MethodGet)
 	s.HandleFunc("/expenses", controllers.AddExpense).Methods(http.MethodPost)
 	s.HandleFunc("/expenses/{id}", controllers.GetExpense).Methods(http.MethodGet)

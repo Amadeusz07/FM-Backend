@@ -10,6 +10,7 @@ type Configuration struct {
 	Production       string
 	ConnectionString string
 	DatabaseName     string
+	SigningKey       string
 	Port             string
 }
 

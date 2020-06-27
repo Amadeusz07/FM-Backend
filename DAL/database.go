@@ -16,6 +16,7 @@ type (
 		NewExpenseData() ExpenseData
 		NewCategoryData() CategoryData
 		NewUserData() UserData
+		NewProjectData() ProjectData
 	}
 )
 
@@ -42,5 +43,12 @@ func (conn connection) NewCategoryData() CategoryData {
 func (conn connection) NewUserData() UserData {
 	return userRepo{
 		collection: conn.database.Collection("users"),
+	}
+}
+
+func (conn connection) NewProjectData() ProjectData {
+	return projectRepo{
+		collection:            conn.database.Collection("projects"),
+		userProjectCollection: conn.database.Collection("projects_users"),
 	}
 }

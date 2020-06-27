@@ -1,5 +1,6 @@
 {
   "production": "#{production}#",
   "connectionString": "#{db-connection-string}#",
-  "databaseName": "#{db-database-name}#"
+  "databaseName": "#{db-database-name}#",
+  "signingKey": "#{signing-key}#"
 }
