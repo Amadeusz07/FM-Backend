@@ -17,11 +17,11 @@ type (
 
 	UserData interface {
 		CreateUser(user *models.User) error
-		GetUserByEmail(email string) models.User
+		GetUserByEmail(email string) (models.User, error)
 	}
 )
 
-func (repo userRepo) GetUserByEmail(email string) models.User {
+func (repo userRepo) GetUserByEmail(email string) (models.User, error) {
 	ctx, cancFunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancFunc()
 	var result models.User
@@ -29,8 +29,9 @@ func (repo userRepo) GetUserByEmail(email string) models.User {
 	err := repo.collection.FindOne(ctx, filter).Decode(&result)
 	if err != nil {
 		fmt.Println(err)
+		return models.User{}, err
 	}
-	return result
+	return result, nil
 }
 
 func (repo userRepo) CreateUser(user *models.User) error {

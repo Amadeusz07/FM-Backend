@@ -50,5 +50,6 @@ func (conn connection) NewProjectData() ProjectData {
 	return projectRepo{
 		collection:            conn.database.Collection("projects"),
 		userProjectCollection: conn.database.Collection("projects_users"),
+		userCollection:        conn.database.Collection("users"),
 	}
 }

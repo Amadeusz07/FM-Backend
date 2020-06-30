@@ -29,8 +29,12 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	user := userData.GetUserByEmail(creds.Email)
-	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(creds.Password))
+	user, err := userData.GetUserByEmail(creds.Email)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(creds.Password))
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode("Invalid password")

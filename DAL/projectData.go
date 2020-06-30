@@ -15,13 +15,14 @@ type (
 	projectRepo struct {
 		collection            *mongo.Collection
 		userProjectCollection *mongo.Collection
+		userCollection        *mongo.Collection
 	}
 
 	ProjectData interface {
 		AddProject(ownerId primitive.ObjectID, project *models.Project) primitive.ObjectID
 		GetAssignedProjects(userId primitive.ObjectID) []models.Project
 		GetProjectsForOwner(ownerId primitive.ObjectID) []models.Project
-		UpdateProject(ownerId primitive.ObjectID, id primitive.ObjectID, model *models.Project)
+		UpdateProject(ownerId primitive.ObjectID, id primitive.ObjectID, model *models.Project) models.Project
 		DisableProject(projectId primitive.ObjectID)
 		AssignUser(projectId primitive.ObjectID, userId primitive.ObjectID)
 		UnAssignUser(projectId primitive.ObjectID, userId primitive.ObjectID)
@@ -31,7 +32,7 @@ type (
 func (repo projectRepo) AddProject(ownerId primitive.ObjectID, project *models.Project) primitive.ObjectID {
 	ctx, cancFunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancFunc()
-	project.AssignedUsers = []models.User{}
+	project.AssignedUsers = []models.UserDto{}
 	project.OwnerId = ownerId
 	project.AddedDate = time.Now()
 	project.Disabled = false
@@ -72,25 +73,32 @@ func (repo projectRepo) GetAssignedProjects(userId primitive.ObjectID) []models.
 	ctx, cancFunc = context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancFunc()
 	var result []models.Project
+	var resultWithUsers []models.Project
 
-	filter = bson.M{"_id": bson.M{"$in": projectsIds}}
-	cursor, err = repo.collection.Find(ctx, filter)
-	if err != nil {
-		fmt.Println(err)
-		return nil
-	}
-	for cursor.Next(ctx) {
-		var projectBson bson.M
-		var project models.Project
-		if err = cursor.Decode(&projectBson); err != nil {
+	if projectsIds != nil {
+		filter = bson.M{"_id": bson.M{"$in": projectsIds}}
+		cursor, err = repo.collection.Find(ctx, filter)
+		if err != nil {
 			fmt.Println(err)
+			return nil
 		}
-		bsonBytes, _ := bson.Marshal(projectBson)
-		bson.Unmarshal(bsonBytes, &project)
-		result = append(result, project)
+		for cursor.Next(ctx) {
+			var projectBson bson.M
+			var project models.Project
+			if err = cursor.Decode(&projectBson); err != nil {
+				fmt.Println(err)
+			}
+			bsonBytes, _ := bson.Marshal(projectBson)
+			bson.Unmarshal(bsonBytes, &project)
+			result = append(result, project)
+		}
+		for _, r := range result {
+			r.AssignedUsers = repo.getAssignedUsers(r.ID)
+			resultWithUsers = append(resultWithUsers, r)
+		}
 	}
 
-	return result
+	return resultWithUsers
 }
 
 func (repo projectRepo) GetProjectsForOwner(ownerId primitive.ObjectID) []models.Project {
@@ -116,10 +124,16 @@ func (repo projectRepo) GetProjectsForOwner(ownerId primitive.ObjectID) []models
 		bson.Unmarshal(bsonBytes, &project)
 		result = append(result, project)
 	}
-	return result
+	var resultWithUsers []models.Project
+	for _, r := range result {
+		r.AssignedUsers = repo.getAssignedUsers(r.ID)
+		resultWithUsers = append(resultWithUsers, r)
+	}
+
+	return resultWithUsers
 }
 
-func (repo projectRepo) UpdateProject(ownerId primitive.ObjectID, id primitive.ObjectID, model *models.Project) {
+func (repo projectRepo) UpdateProject(ownerId primitive.ObjectID, id primitive.ObjectID, model *models.Project) models.Project {
 	ctx, cancFunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancFunc()
 	filter := bson.M{"_id": id, "_ownerId": ownerId}
@@ -128,6 +142,13 @@ func (repo projectRepo) UpdateProject(ownerId primitive.ObjectID, id primitive.O
 	if err != nil {
 		fmt.Println(err)
 	}
+	result, err := repo.collection.Find(ctx, filter)
+	var project models.Project
+	if err = result.Decode(&project); err != nil {
+		fmt.Println(err)
+	}
+
+	return project
 }
 
 func (repo projectRepo) DisableProject(projectId primitive.ObjectID) {
@@ -162,24 +183,46 @@ func (repo projectRepo) UnAssignUser(projectId primitive.ObjectID, userId primit
 	}
 }
 
-//func (repo projectRepo) getAssigendUsers(projectId primitive.ObjectID) []models.User {
-//	ctx, cancFunc := context.WithTimeout(context.Background(), 5*time.Second)
-//	defer cancFunc()
-//
-//	filter := bson.M{"projectId": projectId}
-//	cursor, err := repo.userProjectCollection.Find(ctx, filter)
-//	if err != nil {
-//		fmt.Println(err)
-//		return nil
-//	}
-//	for cursor.Next(ctx) {
-//		var projectBson bson.M
-//		var project models.Project
-//		if err = cursor.Decode(&projectBson); err != nil {
-//			fmt.Println(err)
-//		}
-//		bsonBytes, _ := bson.Marshal(projectBson)
-//		bson.Unmarshal(bsonBytes, &project)
-//		result = append(result, project)
-//	}
-//}
+func (repo projectRepo) getAssignedUsers(projectId primitive.ObjectID) []models.UserDto {
+	ctx, cancFunc := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancFunc()
+
+	filter := bson.M{"projectId": projectId}
+	cursor, err := repo.userProjectCollection.Find(ctx, filter)
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	var userIds []primitive.ObjectID
+	for cursor.Next(ctx) {
+		var projectBson bson.M
+		var projectUser models.ProjectUser
+		if err = cursor.Decode(&projectBson); err != nil {
+			fmt.Println(err)
+		}
+		bsonBytes, _ := bson.Marshal(projectBson)
+		bson.Unmarshal(bsonBytes, &projectUser)
+		userIds = append(userIds, projectUser.UserId)
+	}
+	var result []models.UserDto
+	if userIds != nil {
+		filter = bson.M{"_id": bson.M{"$in": userIds}}
+		cursor, err = repo.userCollection.Find(ctx, filter)
+		if err != nil {
+			fmt.Println(err)
+			return nil
+		}
+		for cursor.Next(ctx) {
+			var userBson bson.M
+			var user models.UserDto
+			if err = cursor.Decode(&userBson); err != nil {
+				fmt.Println(err)
+			}
+			bsonBytes, _ := bson.Marshal(userBson)
+			bson.Unmarshal(bsonBytes, &user)
+			result = append(result, user)
+		}
+	}
+
+	return result
+}

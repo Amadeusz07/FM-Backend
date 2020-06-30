@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"../DAL"
+	"../dtos"
 	"../models"
 	"encoding/json"
 	"fmt"
@@ -65,14 +66,15 @@ func UpdateProject(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	projectData.UpdateProject(ownerId, id, &project)
+	updatedProject := projectData.UpdateProject(ownerId, id, &project)
 	w.WriteHeader(http.StatusNoContent)
+	json.NewEncoder(w).Encode(updatedProject)
 }
 
 func AssignUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	decoder := json.NewDecoder(r.Body)
-	var projectUser models.ProjectUser
+	var projectUser dtos.AssignUserRequest
 	if err := decoder.Decode(&projectUser); err != nil {
 		fmt.Println(err)
 		return
@@ -83,7 +85,12 @@ func AssignUser(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	projectData.AssignUser(id, projectUser.UserId)
+	user, err := userData.GetUserByEmail(projectUser.Username)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	projectData.AssignUser(id, user.ID)
 
 	w.WriteHeader(http.StatusNoContent)
 }
@@ -106,4 +113,16 @@ func UnAssignUser(w http.ResponseWriter, r *http.Request) {
 	projectData.UnAssignUser(id, projectUser.UserId)
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func DisableProject(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	vars := mux.Vars(r)
+	id, err := primitive.ObjectIDFromHex(vars["id"])
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	projectData.DisableProject(id)
+	w.WriteHeader(http.StatusAccepted)
 }

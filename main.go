@@ -50,6 +50,7 @@ func initHTTPServer() {
 	s.HandleFunc("/projects/{id}", controllers.UpdateProject).Methods(http.MethodPut)
 	s.HandleFunc("/projects/{id}/assignUser", controllers.AssignUser).Methods(http.MethodPost)
 	s.HandleFunc("/projects/{id}/unAssignUser", controllers.UnAssignUser).Methods(http.MethodPost)
+	s.HandleFunc("/projects/{id}", controllers.DisableProject).Methods(http.MethodDelete)
 
 	s.HandleFunc("/expenses", controllers.GetExpenses).Queries("count", "{count}").Queries("date", "{date}").Methods(http.MethodGet)
 	s.HandleFunc("/expenses", controllers.AddExpense).Methods(http.MethodPost)

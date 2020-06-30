@@ -12,5 +12,5 @@ type Project struct {
 	AddedDate     time.Time          `json:"addedDate,omitempty" bson:"addedDate,omitempty"`
 	DisabledDate  time.Time          `json:"disabledDate,omitempty" bson:"disabledDate"`
 	Disabled      bool               `json:"disabled" bson:"disabled"`
-	AssignedUsers []User             `json:"assignedUsers" bson:"assignedUsers"`
+	AssignedUsers []UserDto          `json:"assignedUsers" bson:"assignedUsers"`
 }
