@@ -3,6 +3,7 @@ package controllers
 import (
 	"encoding/json"
 	"fmt"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"net/http"
 	"time"
 
@@ -15,9 +16,11 @@ import (
 )
 
 var userData DAL.UserData
+var projectDataAuth DAL.ProjectData
 
-func NewAuthController(user DAL.UserData) {
+func NewAuthController(user DAL.UserData, project DAL.ProjectData) {
 	userData = user
+	projectDataAuth = project
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
@@ -76,6 +79,37 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
+}
+
+func SelectProject(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	userId, _ := primitive.ObjectIDFromHex(r.Header.Get("userId"))
+	decoder := json.NewDecoder(r.Body)
+	var request dtos.ChangeProjectRequest
+	if err := decoder.Decode(&request); err != nil {
+		fmt.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	user, err := userData.GetUserById(userId)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	if !projectDataAuth.IsUserAssignedToProject(request.ProjectId, userId) && !projectDataAuth.IsOwnerOfProject(request.ProjectId, userId) {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	expDate := time.Now().Add(time.Minute * 30)
+	token, err := authService.GenerateJWTWithProject(user.ID, user.Email, expDate, request.ProjectId)
+	if err != nil {
+		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+
+	response := dtos.LoginResponse{token, expDate}
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
 }
 
 func Logout(w http.ResponseWriter, r *http.Request) {

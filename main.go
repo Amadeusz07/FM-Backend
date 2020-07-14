@@ -28,7 +28,7 @@ func main() {
 	controllers.NewProjectsController(db.NewProjectData())
 	controllers.NewExpensesController(db.NewExpenseData())
 	controllers.NewCategoriesController(db.NewCategoryData())
-	controllers.NewAuthController(db.NewUserData())
+	controllers.NewAuthController(db.NewUserData(), db.NewProjectData())
 	initHTTPServer()
 }
 
@@ -45,7 +45,10 @@ func initHTTPServer() {
 	s.Use(authService.IsAuthorized)
 
 	s.HandleFunc("/projects", controllers.GetProjectByOwnerId).Methods(http.MethodGet)
+	s.HandleFunc("/projects/assigned", controllers.GetAssignedProjects).Methods(http.MethodGet)
 	s.HandleFunc("/projects", controllers.CreateProject).Methods(http.MethodPost)
+
+	s.HandleFunc("/selectProject", controllers.SelectProject).Methods(http.MethodPost)
 	//if is owner
 	s.HandleFunc("/projects/{id}", controllers.UpdateProject).Methods(http.MethodPut)
 	s.HandleFunc("/projects/{id}/assignUser", controllers.AssignUser).Methods(http.MethodPost)

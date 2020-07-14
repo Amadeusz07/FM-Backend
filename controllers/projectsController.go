@@ -40,14 +40,26 @@ func GetProjectByOwnerId(w http.ResponseWriter, r *http.Request) {
 	userId, _ := primitive.ObjectIDFromHex(r.Header.Get("userId"))
 
 	projects := projectData.GetProjectsForOwner(userId)
-	assignedProjects := projectData.GetAssignedProjects(userId)
 
-	allProjects := append(projects, assignedProjects...)
-	if allProjects == nil {
+	if projects == nil {
 		w.WriteHeader(http.StatusNotFound)
 	} else {
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(allProjects)
+		json.NewEncoder(w).Encode(projects)
+	}
+}
+
+func GetAssignedProjects(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	userId, _ := primitive.ObjectIDFromHex(r.Header.Get("userId"))
+
+	assignedProjects := projectData.GetAssignedProjects(userId)
+
+	if assignedProjects == nil {
+		w.WriteHeader(http.StatusNotFound)
+	} else {
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(assignedProjects)
 	}
 }
 

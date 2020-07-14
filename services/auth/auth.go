@@ -66,3 +66,21 @@ func GenerateJWT(userId primitive.ObjectID, username string, expDate time.Time) 
 
 	return tokenString, err
 }
+
+func GenerateJWTWithProject(userId primitive.ObjectID, username string, expDate time.Time, projectId primitive.ObjectID) (string, error) {
+	token := jwt.New(jwt.SigningMethodHS256)
+	claims := token.Claims.(jwt.MapClaims)
+	claims["authorized"] = true
+	claims["userId"] = userId.Hex()
+	claims["user"] = username
+	claims["exp"] = expDate.Unix()
+	claims["projectId"] = projectId
+
+	tokenString, err := token.SignedString(mySigningKey)
+	if err != nil {
+		fmt.Errorf("JWT token generation went wrong")
+		return "", err
+	}
+
+	return tokenString, err
+}

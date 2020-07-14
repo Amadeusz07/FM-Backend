@@ -26,6 +26,8 @@ type (
 		DisableProject(projectId primitive.ObjectID)
 		AssignUser(projectId primitive.ObjectID, userId primitive.ObjectID)
 		UnAssignUser(projectId primitive.ObjectID, userId primitive.ObjectID)
+		IsUserAssignedToProject(projectId primitive.ObjectID, userId primitive.ObjectID) bool
+		IsOwnerOfProject(projectId primitive.ObjectID, userId primitive.ObjectID) bool
 	}
 )
 
@@ -76,7 +78,7 @@ func (repo projectRepo) GetAssignedProjects(userId primitive.ObjectID) []models.
 	var resultWithUsers []models.Project
 
 	if projectsIds != nil {
-		filter = bson.M{"_id": bson.M{"$in": projectsIds}}
+		filter = bson.M{"_id": bson.M{"$in": projectsIds}, "disabled": false}
 		cursor, err = repo.collection.Find(ctx, filter)
 		if err != nil {
 			fmt.Println(err)
@@ -181,6 +183,37 @@ func (repo projectRepo) UnAssignUser(projectId primitive.ObjectID, userId primit
 	if err != nil {
 		fmt.Println(err)
 	}
+}
+
+func (repo projectRepo) IsUserAssignedToProject(projectId primitive.ObjectID, userId primitive.ObjectID) bool {
+	ctx, cancFunc := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancFunc()
+
+	var result models.ProjectUser
+	filter := bson.M{"projectId": projectId, "userId": userId}
+
+	err := repo.userProjectCollection.FindOne(ctx, filter).Decode(&result)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+
+	return true
+}
+
+func (repo projectRepo) IsOwnerOfProject(projectId primitive.ObjectID, userId primitive.ObjectID) bool {
+	ctx, cancFunc := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancFunc()
+
+	var result models.ProjectUser
+	filter := bson.M{"_id": projectId, "_ownerId": userId}
+	err := repo.collection.FindOne(ctx, filter).Decode(&result)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+
+	return true
 }
 
 func (repo projectRepo) getAssignedUsers(projectId primitive.ObjectID) []models.UserDto {
