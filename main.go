@@ -77,7 +77,7 @@ func initHTTPServer() {
 
 func initDbConnection() DAL.Database {
 	fmt.Println("Starting connection to MongoDB")
-	client, err := mongo.NewClient(options.Client().ApplyURI(cfg.ConnectionString).SetDirect(true))
+	client, err := mongo.NewClient(options.Client().ApplyURI(cfg.ConnectionString))
 	if err != nil {
 		log.Fatal(err)
 		panic("Error on creating MongoDB Client")
