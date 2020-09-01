@@ -32,6 +32,9 @@ func IsAuthorized(next http.Handler) http.Handler {
 					claims := token.Claims.(jwt.MapClaims)
 					if !claims.VerifyNotBefore(time.Now().Unix(), true) {
 						r.Header.Add("userId", claims["userId"].(string))
+						if claims["projectId"] != nil {
+							r.Header.Add("selectedProjectId", claims["projectId"].(string))
+						}
 						next.ServeHTTP(w, r)
 					}
 				} else {

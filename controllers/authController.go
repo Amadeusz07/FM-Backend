@@ -49,7 +49,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 	}
-	response := dtos.LoginResponse{token, expDate}
+	response := dtos.LoginResponse{token, expDate, user.Email, ""}
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
 
@@ -106,8 +106,7 @@ func SelectProject(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 	}
-
-	response := dtos.LoginResponse{token, expDate}
+	response := dtos.LoginResponse{token, expDate, user.Email, request.ProjectId.Hex()}
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
 }

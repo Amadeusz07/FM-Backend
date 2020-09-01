@@ -17,6 +17,20 @@ func NewProjectsController(projects DAL.ProjectData) {
 	projectData = projects
 }
 
+func GetProject(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	vars := mux.Vars(r)
+	id, err := primitive.ObjectIDFromHex(vars["id"])
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	project := projectData.GetProject(id)
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(project)
+}
+
 func CreateProject(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	ownerId, _ := primitive.ObjectIDFromHex(r.Header.Get("userId"))

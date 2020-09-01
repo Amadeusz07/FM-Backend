@@ -47,6 +47,7 @@ func initHTTPServer() {
 	s.HandleFunc("/projects", controllers.GetProjectByOwnerId).Methods(http.MethodGet)
 	s.HandleFunc("/projects/assigned", controllers.GetAssignedProjects).Methods(http.MethodGet)
 	s.HandleFunc("/projects", controllers.CreateProject).Methods(http.MethodPost)
+	s.HandleFunc("/projects/{id}", controllers.GetProject).Methods(http.MethodGet)
 
 	s.HandleFunc("/selectProject", controllers.SelectProject).Methods(http.MethodPost)
 	//if is owner

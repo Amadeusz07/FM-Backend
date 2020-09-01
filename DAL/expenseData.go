@@ -21,16 +21,16 @@ type (
 	}
 	// ExpenseData main interface
 	ExpenseData interface {
-		GetLastHistory(userId primitive.ObjectID, count int64, date time.Time) []models.Expense
-		GetDataByID(userId primitive.ObjectID, id primitive.ObjectID) models.Expense
-		AddExpense(userId primitive.ObjectID, expense *models.Expense) primitive.ObjectID
-		DeleteExpense(userId primitive.ObjectID, expenseId primitive.ObjectID)
-		GetSummary(userId primitive.ObjectID) []models.CategorySummary
-		IsAnyInCategory(userId primitive.ObjectID, categoryId primitive.ObjectID) bool
+		GetLastHistory(projectId primitive.ObjectID, count int64, date time.Time) []models.Expense
+		GetDataByID(projectId primitive.ObjectID, id primitive.ObjectID) models.Expense
+		AddExpense(userId primitive.ObjectID, projectId primitive.ObjectID, expense *models.Expense) primitive.ObjectID
+		DeleteExpense(projectId primitive.ObjectID, expenseId primitive.ObjectID)
+		GetSummary(projectId primitive.ObjectID) []models.CategorySummary
+		IsAnyInCategory(projectId primitive.ObjectID, categoryId primitive.ObjectID) bool
 	}
 )
 
-func (repo expenseRepo) GetLastHistory(userId primitive.ObjectID, count int64, date time.Time) []models.Expense {
+func (repo expenseRepo) GetLastHistory(projectId primitive.ObjectID, count int64, date time.Time) []models.Expense {
 	ctx, cancFunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancFunc()
 	var result []models.Expense
@@ -42,7 +42,7 @@ func (repo expenseRepo) GetLastHistory(userId primitive.ObjectID, count int64, d
 			"$gt": fromDate,
 			"$lt": toDate,
 		},
-		"_userId": userId,
+		"projectId": projectId,
 	}
 	//opts := options.Find().SetSort(bson.D{{"addedDate", -1}})
 	opts := options.Find().SetLimit(count)
@@ -71,10 +71,10 @@ func (repo expenseRepo) GetLastHistory(userId primitive.ObjectID, count int64, d
 	return result
 }
 
-func (repo expenseRepo) GetDataByID(userId primitive.ObjectID, id primitive.ObjectID) models.Expense {
+func (repo expenseRepo) GetDataByID(projectId primitive.ObjectID, id primitive.ObjectID) models.Expense {
 	ctx, cancFunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancFunc()
-	filter := bson.M{"_id": id, "_userId": userId}
+	filter := bson.M{"_id": id, "projectId": projectId}
 	var result models.Expense
 	err := repo.collection.FindOne(ctx, filter).Decode(&result)
 	if err != nil {
@@ -83,9 +83,10 @@ func (repo expenseRepo) GetDataByID(userId primitive.ObjectID, id primitive.Obje
 	return result
 }
 
-func (repo expenseRepo) AddExpense(userId primitive.ObjectID, expense *models.Expense) primitive.ObjectID {
+func (repo expenseRepo) AddExpense(userId primitive.ObjectID, projectId primitive.ObjectID, expense *models.Expense) primitive.ObjectID {
 	expense.AddedDate = time.Now()
 	expense.UserID = userId
+	expense.ProjectID = projectId
 	ctx, cancFunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancFunc()
 	res, err := repo.collection.InsertOne(ctx, expense)
@@ -95,21 +96,21 @@ func (repo expenseRepo) AddExpense(userId primitive.ObjectID, expense *models.Ex
 	return res.InsertedID.(primitive.ObjectID)
 }
 
-func (repo expenseRepo) DeleteExpense(userId primitive.ObjectID, id primitive.ObjectID) {
+func (repo expenseRepo) DeleteExpense(projectId primitive.ObjectID, id primitive.ObjectID) {
 	ctx, cancFunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancFunc()
-	filter := bson.M{"_id": id, "_userId": userId}
+	filter := bson.M{"_id": id, "projectId": projectId}
 	_, err := repo.collection.DeleteOne(ctx, filter)
 	if err != nil {
 		fmt.Println(err)
 	}
 }
 
-func (repo expenseRepo) GetSummary(userId primitive.ObjectID) []models.CategorySummary {
+func (repo expenseRepo) GetSummary(projectId primitive.ObjectID) []models.CategorySummary {
 	ctx, cancFunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancFunc()
 	pipeline := []bson.M{
-		{"$match": bson.M{"_userId": userId}},
+		{"$match": bson.M{"projectId": projectId}},
 		{"$group": bson.M{
 			"_id": "$_categoryId",
 			"sum": bson.M{"$sum": "$amount"},
@@ -142,10 +143,10 @@ func (repo expenseRepo) GetSummary(userId primitive.ObjectID) []models.CategoryS
 	return results
 }
 
-func (repo expenseRepo) IsAnyInCategory(userId primitive.ObjectID, categoryId primitive.ObjectID) bool {
+func (repo expenseRepo) IsAnyInCategory(projectId primitive.ObjectID, categoryId primitive.ObjectID) bool {
 	ctx, cancFunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancFunc()
-	filter := bson.M{"_categoryId": categoryId, "_userId": userId}
+	filter := bson.M{"_categoryId": categoryId, "projectId": projectId}
 	count, _ := repo.collection.CountDocuments(ctx, filter)
 	return count > 0
 }

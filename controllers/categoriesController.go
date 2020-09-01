@@ -21,8 +21,8 @@ func NewCategoriesController(category DAL.CategoryData) {
 // GetCategories /categories
 func GetCategories(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	userId, _ := primitive.ObjectIDFromHex(r.Header.Get("userId"))
-	result := categoryData.GetCategories(userId)
+	projectId, _ := primitive.ObjectIDFromHex(r.Header.Get("selectedProjectId"))
+	result := categoryData.GetCategories(projectId)
 	if result == nil {
 		w.WriteHeader(http.StatusNotFound)
 	} else {
@@ -34,14 +34,14 @@ func GetCategories(w http.ResponseWriter, r *http.Request) {
 // GetCategory /categories/:id
 func GetCategory(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	userId, _ := primitive.ObjectIDFromHex(r.Header.Get("userId"))
+	projectId, _ := primitive.ObjectIDFromHex(r.Header.Get("selectedProjectId"))
 	vars := mux.Vars(r)
 	id, err := primitive.ObjectIDFromHex(vars["id"])
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	result := categoryData.GetDataByID(userId, id)
+	result := categoryData.GetDataByID(projectId, id)
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(result)
 }
@@ -50,6 +50,7 @@ func GetCategory(w http.ResponseWriter, r *http.Request) {
 func AddCategory(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	userId, _ := primitive.ObjectIDFromHex(r.Header.Get("userId"))
+	projectId, _ := primitive.ObjectIDFromHex(r.Header.Get("selectedProjectId"))
 	decoder := json.NewDecoder(r.Body)
 	var category models.Category
 	err := decoder.Decode(&category)
@@ -58,7 +59,7 @@ func AddCategory(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	id := categoryData.AddCategory(userId, &category)
+	id := categoryData.AddCategory(userId, projectId, &category)
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(struct {
 		ID primitive.ObjectID
@@ -68,7 +69,7 @@ func AddCategory(w http.ResponseWriter, r *http.Request) {
 // UpdateCategory /categories/:id
 func UpdateCategory(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	userId, _ := primitive.ObjectIDFromHex(r.Header.Get("userId"))
+	projectId, _ := primitive.ObjectIDFromHex(r.Header.Get("selectedProjectId"))
 	decoder := json.NewDecoder(r.Body)
 	var category models.Category
 	if err := decoder.Decode(&category); err != nil {
@@ -81,33 +82,33 @@ func UpdateCategory(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	categoryData.UpdateCategory(userId, id, &category)
+	categoryData.UpdateCategory(projectId, id, &category)
 	w.WriteHeader(http.StatusNoContent)
 }
 
 // DeleteCategory /categories/:id
 func DeleteCategory(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	userId, _ := primitive.ObjectIDFromHex(r.Header.Get("userId"))
+	projectId, _ := primitive.ObjectIDFromHex(r.Header.Get("selectedProjectId"))
 	vars := mux.Vars(r)
 	id, err := primitive.ObjectIDFromHex(vars["id"])
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	isAny := expenseData.IsAnyInCategory(userId, id)
+	isAny := expenseData.IsAnyInCategory(projectId, id)
 	if isAny {
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
-	categoryData.DeleteCategory(userId, id)
+	categoryData.DeleteCategory(projectId, id)
 	w.WriteHeader(http.StatusAccepted)
 }
 
 func GetCategoriesSummary(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	userId, _ := primitive.ObjectIDFromHex(r.Header.Get("userId"))
-	result := expenseData.GetSummary(userId)
+	projectId, _ := primitive.ObjectIDFromHex(r.Header.Get("selectedProjectId"))
+	result := expenseData.GetSummary(projectId)
 	if result == nil {
 		w.WriteHeader(http.StatusNotFound)
 		return

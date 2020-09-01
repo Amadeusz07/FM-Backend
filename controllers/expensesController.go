@@ -33,8 +33,8 @@ func GetExpenses(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	userId, _ := primitive.ObjectIDFromHex(r.Header.Get("userId"))
-	result := expenseData.GetLastHistory(userId, count, date)
+	projectId, _ := primitive.ObjectIDFromHex(r.Header.Get("selectedProjectId"))
+	result := expenseData.GetLastHistory(projectId, count, date)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -49,8 +49,8 @@ func GetExpense(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	userId, _ := primitive.ObjectIDFromHex(r.Header.Get("userId"))
-	result := expenseData.GetDataByID(userId, id)
+	projectId, _ := primitive.ObjectIDFromHex(r.Header.Get("selectedProjectId"))
+	result := expenseData.GetDataByID(projectId, id)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -68,7 +68,8 @@ func AddExpense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	userId, _ := primitive.ObjectIDFromHex(r.Header.Get("userId"))
-	id := expenseData.AddExpense(userId, &expense)
+	projectId, _ := primitive.ObjectIDFromHex(r.Header.Get("selectedProjectId"))
+	id := expenseData.AddExpense(userId, projectId, &expense)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -79,13 +80,13 @@ func AddExpense(w http.ResponseWriter, r *http.Request) {
 
 func DeleteExpense(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	userId, _ := primitive.ObjectIDFromHex(r.Header.Get("userId"))
+	projectId, _ := primitive.ObjectIDFromHex(r.Header.Get("selectedProjectId"))
 	vars := mux.Vars(r)
 	id, err := primitive.ObjectIDFromHex(vars["id"])
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	expenseData.DeleteExpense(userId, id)
+	expenseData.DeleteExpense(projectId, id)
 	w.WriteHeader(http.StatusAccepted)
 }

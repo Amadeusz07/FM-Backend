@@ -20,6 +20,7 @@ type (
 
 	ProjectData interface {
 		AddProject(ownerId primitive.ObjectID, project *models.Project) primitive.ObjectID
+		GetProject(id primitive.ObjectID) models.Project
 		GetAssignedProjects(userId primitive.ObjectID) []models.Project
 		GetProjectsForOwner(ownerId primitive.ObjectID) []models.Project
 		UpdateProject(ownerId primitive.ObjectID, id primitive.ObjectID, model *models.Project) models.Project
@@ -44,6 +45,17 @@ func (repo projectRepo) AddProject(ownerId primitive.ObjectID, project *models.P
 	}
 
 	return res.InsertedID.(primitive.ObjectID)
+}
+
+func (repo projectRepo) GetProject(id primitive.ObjectID) models.Project {
+	ctx, cancFunc := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancFunc()
+
+	var result models.Project
+	filter := bson.M{"_id": id}
+	repo.collection.FindOne(ctx, filter).Decode(&result)
+
+	return result
 }
 
 func (repo projectRepo) GetAssignedProjects(userId primitive.ObjectID) []models.Project {
