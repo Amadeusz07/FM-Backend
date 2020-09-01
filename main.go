@@ -79,6 +79,7 @@ func initDbConnection() DAL.Database {
 	fmt.Println("Starting connection to MongoDB")
 	client, err := mongo.NewClient(options.Client().ApplyURI(cfg.ConnectionString).SetDirect(true))
 	if err != nil {
+		log.Fatal(err)
 		panic("Error on creating MongoDB Client")
 	}
 	ctx, canc := context.WithTimeout(context.Background(), 10*time.Second)
