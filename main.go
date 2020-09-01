@@ -86,6 +86,7 @@ func initDbConnection() DAL.Database {
 	err = client.Connect(ctx)
 	if err != nil {
 		log.Fatal("Error on connecting to MongoDB")
+		log.Fatal(err)
 	}
 	err = client.Ping(context.TODO(), nil)
 	if err != nil {
