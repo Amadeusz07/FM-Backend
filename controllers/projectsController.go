@@ -116,6 +116,11 @@ func AssignUser(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
+	project := projectData.GetProject(id)
+	if project.OwnerId == user.ID {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 	projectData.AssignUser(id, user.ID)
 
 	w.WriteHeader(http.StatusNoContent)

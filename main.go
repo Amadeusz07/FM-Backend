@@ -77,19 +77,17 @@ func initHTTPServer() {
 
 func initDbConnection() DAL.Database {
 	fmt.Println("Starting connection to MongoDB")
-	client, err := mongo.NewClient(options.Client().ApplyURI(cfg.ConnectionString))
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(
+		cfg.ConnectionString,
+	))
 	if err != nil {
 		log.Fatal(err)
-		panic("Error on creating MongoDB Client")
 	}
-	ctx, canc := context.WithTimeout(context.Background(), 10*time.Second)
-	defer canc()
-	err = client.Connect(ctx)
-	if err != nil {
-		log.Fatal("Error on connecting to MongoDB")
-		log.Fatal(err)
-	}
-	err = client.Ping(context.TODO(), nil)
+
+	err = client.Ping(ctx, nil)
 	if err != nil {
 		log.Fatal(err)
 	}

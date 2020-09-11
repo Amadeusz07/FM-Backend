@@ -98,7 +98,7 @@ func DeleteCategory(w http.ResponseWriter, r *http.Request) {
 	}
 	isAny := expenseData.IsAnyInCategory(projectId, id)
 	if isAny {
-		w.WriteHeader(http.StatusForbidden)
+		w.WriteHeader(http.StatusNotAcceptable)
 		return
 	}
 	categoryData.DeleteCategory(projectId, id)

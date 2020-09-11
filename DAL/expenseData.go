@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
+	"math"
 	"time"
 
 	"../models"
@@ -34,7 +35,6 @@ func (repo expenseRepo) GetLastHistory(projectId primitive.ObjectID, count int64
 	ctx, cancFunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancFunc()
 	var result []models.Expense
-	//t := time.Now()
 	fromDate := time.Date(date.Year(), date.Month(), 1, 0, 0, 0, 0, time.UTC)
 	toDate := time.Date(date.Year(), date.Month()+1, 1, 0, 0, 0, 0, time.UTC)
 	filter := bson.M{
@@ -44,8 +44,8 @@ func (repo expenseRepo) GetLastHistory(projectId primitive.ObjectID, count int64
 		},
 		"projectId": projectId,
 	}
-	//opts := options.Find().SetSort(bson.D{{"addedDate", -1}})
-	opts := options.Find().SetLimit(count)
+	opts := options.Find().SetSort(bson.D{{"addedDate", -1}}).SetLimit(count)
+	//opts := options.Find().SetLimit(count)
 	cursor, err := repo.collection.Find(ctx, filter, opts)
 	if err != nil {
 		fmt.Println(err)
@@ -87,6 +87,7 @@ func (repo expenseRepo) AddExpense(userId primitive.ObjectID, projectId primitiv
 	expense.AddedDate = time.Now()
 	expense.UserID = userId
 	expense.ProjectID = projectId
+	expense.Amount = math.Round(expense.Amount*100) / 100
 	ctx, cancFunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancFunc()
 	res, err := repo.collection.InsertOne(ctx, expense)
